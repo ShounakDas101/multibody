@@ -18,6 +18,35 @@ __global__ void gpu_matrix_mult(int *a,int *b, int *c, int m, int n, int k)
     }
 } 
 
+
+/*Function representing the 2nd order differential equation (modify this according to your equation)
+  My Equation is:
+  */
+__device__ double f(double t, double y, double z) {
+// Example: dz/dt = d^2y/dt^2 =  = -A*Sin(2y) +B*Sin(wt)*Sin(y) -Cz + D
+double A=1, B=2, C=3, D=4, w=5;
+return -A*sin(2*y) + B*sin(w*t)*sin(y) -C*z + D;
+}
+
+// Euler method implementation
+__global__ void eulerMethod(double t0, double y0, double z0, double dt, double t_end) {
+double t = t0;
+double y = y0;
+double z = z0;
+
+while (t <= t_end) {
+printf("t = %lf, y = %lf\n", t, y);
+
+double y_next = y + dt * z;
+double z_next = z + dt * f(t, y, z);
+
+t += dt;
+y = y_next;
+z = z_next;
+}
+}
+
+
 int main(int argc, char const *argv[])
 {
     /* Fixed seed for illustration */
