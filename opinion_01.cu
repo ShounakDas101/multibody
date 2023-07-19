@@ -29,16 +29,14 @@ return -A*sin(2*y) + B*sin(w*t)*sin(y) -C*z + D;
 }
 
 // Euler method implementation
-__global__ void eulerMethod(double t0, double y0, double z0, double dt, double t_end) {
-double t = t0;
-double y = y0;
-double z = z0;
+__global__ void eulerMethod(double* a, double* b, double* c, double t0, double y0, double t0, double dt) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y; 
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
 
-while (t <= t_end) {
-printf("t = %lf, y = %lf\n", t, y);
-
-double y_next = y + dt * z;
-double z_next = z + dt * f(t, y, z);
+    /* double t = t0;   double y = y0;  double z = z0; */
+    double t = t0;   double y = a[row+BLOCK_SIZE*col];  double z = b[row+BLOCK_SIZE*col];    
+    double y_next = y + dt * z;
+    double z_next = z + dt * f(t, y, z);
 
 t += dt;
 y = y_next;
@@ -90,14 +88,10 @@ int main(int argc, char const *argv[])
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
    
     // Launch kernel 
-    if(m == n && n == k)
-    {
-        gpu_square_matrix_mult<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, n);    
-    }
-    else
-    {
-        gpu_matrix_mult<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, m, n, k);    
-    }
+        gpu_matrix_mult<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, m, n, k); 
+        //eulerMethod(double* d_a, double* d_b, double* d_c, double dt, double t_end)
+        eulerMethod<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, dt, t_end);     
+    
     // Transefr results from device to host 
     cudaMemcpy(h_c, d_c, sizeof(int)*m*k, cudaMemcpyDeviceToHost);
     cudaThreadSynchronize();
